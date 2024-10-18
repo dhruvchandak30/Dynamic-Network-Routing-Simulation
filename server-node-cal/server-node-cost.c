@@ -38,7 +38,7 @@ int main()
     float cost[n - 1];
     printf("Enter the cost matrix of the network: \n");
 
-    for (int j = 0; j < n - 1; j++)
+    for (int j = 0; j < n; j++)
     {
         printf("Enter the cost of connection between node %d and node %d: ", 0, j + 1);
         float val;
