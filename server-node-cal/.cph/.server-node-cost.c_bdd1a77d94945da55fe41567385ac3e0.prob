@@ -1,0 +1,1 @@
+{"name":"Local: server-node-cost","url":"e:\\mini-project\\server-node-cal\\server-node-cost.c","tests":[{"id":1725611129219,"input":"4\n3\n4\n2","output":""}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"e:\\mini-project\\server-node-cal\\server-node-cost.c","group":"local","local":true}
