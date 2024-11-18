@@ -6,9 +6,7 @@
 
 using namespace std;
 
-#include <fstream>
-#include <iostream>
-#include <vector>
+#define ROUND_TO_ONE_DECIMAL(value) (std::round((value) * 10) / 10.0)
 
 void justPrintTable(const vector<vector<int>> &a)
 {
@@ -265,6 +263,10 @@ vector<vector<int>> generateCombinations(int m, int n, vector<vector<int>> &a)
 
     return result;
 }
+float truncateToOneDecimal(float value)
+{
+    return std::floor(value * 10) / 10.0;
+}
 
 void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &combinations, vector<vector<Table>> tables)
 {
@@ -298,55 +300,121 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
         {
             int node1 = combinations[i][0];
             int node2 = combinations[i][1];
+
+            // Check if one node can send to both destinations
+            bool canSendToBoth1 = false;
             for (int j = 0; j < tables[node1 - 1].size(); j++)
             {
-                for (int k = 0; k < tables[node2 - 1].size(); k++)
+                if (tables[node1 - 1][j].destinations.size() == (n - (m + 1)) && tables[node1 - 1][j].cost != -1)
                 {
-                    if (tables[node1 - 1][j].destinations.size() == 1 && tables[node2 - 1][k].destinations.size() == 1)
+                    canSendToBoth1 = true;
+                }
+            }
+            // Check if node2 can send to both destinations
+            bool canSendToBoth2 = false;
+            for (int j = 0; j < tables[node2 - 1].size(); j++)
+            {
+                if (tables[node2 - 1][j].destinations.size() == (n - (m + 1)) && tables[node2 - 1][j].cost != -1)
+                {
+                    canSendToBoth2 = true;
+                }
+                else
+                {
+                    canSendToBoth2 = false;
+                }
+            }
+
+            // function if one can send to both the nodes
+            if (canSendToBoth1 || canSendToBoth2)
+            {
+                int cannotSend;
+                int canSend;
+                if (canSendToBoth1)
+                {
+                    canSend = node1;
+                    cannotSend = node2;
+                }
+                else
+                {
+                    canSend = node2;
+                    cannotSend = node1;
+                }
+                int dest1 = 0;
+                for (int j = 0; j < tables[cannotSend - 1].size(); j++)
+                {
+                    if (tables[cannotSend - 1][j].destinations.size() == 1 && tables[cannotSend - 1][j].cost != -1)
                     {
-                        if (tables[node1 - 1][j].destinations[0] == tables[node2 - 1][k].destinations[0])
+                        dest1 = tables[cannotSend - 1][j].destinations[0];
+                    }
+                }
+
+                int val1 = a[0][cannotSend];
+                int val2 = a[cannotSend][dest1];
+
+                int val3 = a[0][canSend];
+                int val4 = a[canSend][dest1];
+                int dest2 = 0;
+                for (int j = 0; j < tables[canSend - 1].size(); j++)
+                {
+                    if (tables[canSend - 1][j].destinations.size() == 2 && tables[canSend - 1][j].cost != -1)
+                    {
+                        if (tables[canSend - 1][j].destinations[0] == dest1)
                         {
-                            cost += tables[node1 - 1][j].cost;
-                            path.push_back(tables[node1 - 1][j].NodeVal);
-                            path.push_back(tables[node1 - 1][j].destinations[0]);
-                            cost += a[0][node1];
-                            cost += a[node1][node2];
-                            cost += a[node2][tables[node1 - 1][j].destinations[0]];
-                            path.push_back(tables[node1 - 1][j].destinations[0]);
+
+                            dest2 = tables[canSend - 1][j].destinations[1];
+                        }
+                        else if (tables[canSend - 1][j].destinations[1] == dest1 && tables[canSend - 1][j].destinations.size() == 2)
+                        {
+                            dest2 = tables[canSend - 1][j].destinations[0];
                         }
                     }
                 }
+                int val5 = a[canSend][dest2];
+                // cout << "val1: " << val1 << ", val2: " << val2 << ", val3: " << val3 << ", val4: " << val4 << ", val5: " << val5 << endl;
+                // cout << "Dest1: " << dest1 << " Dest2: " << dest2 << endl;
+
+                float c1 = ((((1 - truncateToOneDecimal(1.0 / val1)) * (1 - truncateToOneDecimal(1.0 / val2))) +
+                             (truncateToOneDecimal(1.0 / val1) * (1 - truncateToOneDecimal(1.0 / val2)) * (1 + val3 + val2 + val4)) +
+                             (truncateToOneDecimal(1.0 / val2) * (1 - truncateToOneDecimal(1.0 / val1)) * (1 + val4 + val1 + val3)) +
+                             (truncateToOneDecimal(1.0 / val1) * truncateToOneDecimal(1.0 / val2) * (1 + val3 + val5))) /
+                            (1 - truncateToOneDecimal((1 - truncateToOneDecimal(1.0 / val1)) * (1 - truncateToOneDecimal(1.0 / val2)))));
             }
-            cout << "Cost via 2 Nodes " << cost << endl;
+            if (!canSendToBoth1 && !canSendToBoth2)
+            {
+
+                int dest1 = 0;
+                int dest2 = 0;
+                for (int j = 0; j < tables[node1 - 1].size(); j++)
+                {
+                    if (tables[node1 - 1][j].destinations.size() == 1 && tables[node1 - 1][j].cost != -1)
+                    {
+                        dest1 = tables[node1 - 1][j].destinations[0];
+                    }
+                }
+                for (int j = 0; j < tables[node2 - 1].size(); j++)
+                {
+                    if (tables[node2 - 1][j].destinations.size() == 1 && tables[node2 - 1][j].cost != -1)
+                    {
+                        dest2 = tables[node2 - 1][j].destinations[0];
+                    }
+                }
+
+                int val1 = a[0][node1];
+                int val2 = a[0][node2];
+                int val3 = a[node1][dest1];
+                int val4 = a[node2][dest2];
+
+                float c1 = ((((1 - truncateToOneDecimal(1.0 / val1)) * (1 - truncateToOneDecimal(1.0 / val2))) +
+                             (truncateToOneDecimal(1.0 / val1) * (1 - truncateToOneDecimal(1.0 / val2)) * (1 + val3 + val2 + val4)) +
+                             (truncateToOneDecimal(1.0 / val2) * (1 - truncateToOneDecimal(1.0 / val1)) * (1 + val4 + val1 + val3)) +
+                             (truncateToOneDecimal(1.0 / val1) * truncateToOneDecimal(1.0 / val2) * (1 + val3 + val4))) /
+                            (1 - truncateToOneDecimal((1 - truncateToOneDecimal(1.0 / val1)) * (1 - truncateToOneDecimal(1.0 / val2)))));
+                cout
+                    << "Cost from " << node1 << " & " << node2 << " is  " << c1 << endl;
+            }
         }
         if (combinations[i].size() == 3)
         {
-            int node1 = combinations[i][0];
-            int node2 = combinations[i][1];
-            int node3 = combinations[i][2];
-            for (int j = 0; j < tables[node1 - 1].size(); j++)
-            {
-                for (int k = 0; k < tables[node2 - 1].size(); k++)
-                {
-                    for (int l = 0; l < tables[node3 - 1].size(); l++)
-                    {
-                        if (tables[node1 - 1][j].destinations.size() == 1 && tables[node2 - 1][k].destinations.size() == 1 && tables[node3 - 1][l].destinations.size() == 1)
-                        {
-                            if (tables[node1 - 1][j].destinations[0] == tables[node2 - 1][k].destinations[0] && tables[node2 - 1][k].destinations[0] == tables[node3 - 1][l].destinations[0])
-                            {
-                                cost += tables[node1 - 1][j].cost;
-                                path.push_back(tables[node1 - 1][j].NodeVal);
-                                path.push_back(tables[node1 - 1][j].destinations[0]);
-                                cost += a[0][node1];
-                                cost += a[node1][node2];
-                                cost += a[node2][node3];
-                                cost += a[node3][tables[node1 - 1][j].destinations[0]];
-                                path.push_back(tables[node1 - 1][j].destinations[0]);
-                            }
-                        }
-                    }
-                }
-            }
             cout << "Cost via 3 Nodes:  " << cost << endl;
         }
         if (cost < minCost)
