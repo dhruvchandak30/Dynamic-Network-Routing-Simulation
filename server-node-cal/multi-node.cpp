@@ -3,6 +3,7 @@
 #include <utility>
 #include <cmath>
 #include <fstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -95,6 +96,7 @@ vector<vector<Table>> generateTableForMiddleNodes(int m, int n, vector<vector<in
     if (!outFile)
     {
         std::cerr << "Error opening the file!" << std::endl;
+        cout << "Error opening the file!" << endl;
         return std::vector<vector<Table>>();
     }
 
@@ -260,9 +262,10 @@ vector<vector<int>> generateCombinations(int m, int n, vector<vector<int>> &a)
             result.erase(result.begin() + i);
         }
     }
-
+    cout << "generated combinations" << endl;
     return result;
 }
+
 float truncateToOneDecimal(float value)
 {
     return std::floor(value * 10) / 10.0;
@@ -273,19 +276,26 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
     float minCost = 1000.00;
     vector<int> minPath;
     cout << "\n\n";
+    std::ofstream outFile("cost.txt");
+    if (!outFile)
+    {
+        std::cerr << "Error opening the file!" << std::endl;
+        cout << "Error opening the file!" << endl;
+    }
+
     for (int i = 0; i < combinations.size(); i++)
     {
-        float cost = 0;
+        float cost = 1000.0;
         vector<int> path;
-        path.push_back(0);
         if (combinations[i].size() == 1)
         {
+            float c1 = 0;
             int node = combinations[i][0];
             for (int j = 0; j < tables[combinations[i][0]].size(); j++)
             {
                 if (tables[node - 1][j].destinations.size() == (n - (m + 1)))
                 {
-                    cost += tables[node - 1][j].cost;
+                    c1 += tables[node - 1][j].cost;
                     path.push_back(tables[node - 1][j].NodeVal);
                     for (int k = 0; k < tables[node - 1][j].destinations.size(); k++)
                     {
@@ -293,8 +303,11 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
                     }
                 }
             }
-            cost += a[0][node];
-            cout << "Cost via 1 Node " << cost << endl;
+            c1 += a[0][node];
+            cout << "Cost via " << node << " is " << c1 << endl;
+            cost = c1;
+
+            outFile << "Cost via " << node << " is " << c1 << std::endl;
         }
         if (combinations[i].size() == 2)
         {
@@ -370,14 +383,22 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
                     }
                 }
                 int val5 = a[canSend][dest2];
-                // cout << "val1: " << val1 << ", val2: " << val2 << ", val3: " << val3 << ", val4: " << val4 << ", val5: " << val5 << endl;
-                // cout << "Dest1: " << dest1 << " Dest2: " << dest2 << endl;
 
-                float c1 = ((((1 - truncateToOneDecimal(1.0 / val1)) * (1 - truncateToOneDecimal(1.0 / val2))) +
-                             (truncateToOneDecimal(1.0 / val1) * (1 - truncateToOneDecimal(1.0 / val2)) * (1 + val3 + val2 + val4)) +
-                             (truncateToOneDecimal(1.0 / val2) * (1 - truncateToOneDecimal(1.0 / val1)) * (1 + val4 + val1 + val3)) +
-                             (truncateToOneDecimal(1.0 / val1) * truncateToOneDecimal(1.0 / val2) * (1 + val3 + val5))) /
-                            (1 - truncateToOneDecimal((1 - truncateToOneDecimal(1.0 / val1)) * (1 - truncateToOneDecimal(1.0 / val2)))));
+                float costOfTwoNode = costOfTwoNodes(static_cast<float>(val4), static_cast<float>(val5));
+
+                float c1 = ((
+                                (1 - (1.0f / val1)) * (1 - (1.0f / val3)) +
+                                (1 - (1.0f / val1)) * (1.0f / val3) * (1 + costOfTwoNode) +
+                                (1.0f / val1) * (1 - (1.0f / val3)) * (1 + std::min(static_cast<float>(val2), val3 + costOfTwoNode)) +
+                                (1.0f / val1) * (1.0f / val3) * (1 + std::min(static_cast<float>(val3 + val5), costOfTwoNode))) /
+                            (1 - ((1 - (1.0f / val1)) * (1 - (1.0f / val3)))));
+
+                cout << "Cost via " << node1 << " & " << node2 << " is " << c1 << endl;
+                cost = c1;
+                path.push_back(canSend);
+                path.push_back(cannotSend);
+
+                outFile << "Cost via " << node1 << " & " << node2 << " is " << c1 << std::endl;
             }
             if (!canSendToBoth1 && !canSendToBoth2)
             {
@@ -410,7 +431,12 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
                              (truncateToOneDecimal(1.0 / val1) * truncateToOneDecimal(1.0 / val2) * (1 + val3 + val4))) /
                             (1 - truncateToOneDecimal((1 - truncateToOneDecimal(1.0 / val1)) * (1 - truncateToOneDecimal(1.0 / val2)))));
                 cout
-                    << "Cost from " << node1 << " & " << node2 << " is  " << c1 << endl;
+                    << "Cost via " << node1 << " & " << node2 << " is  " << c1 << endl;
+                cost = c1;
+                path.push_back(node1);
+                path.push_back(node2);
+
+                outFile << "Cost via " << node1 << " & " << node2 << " is " << c1 << std::endl;
             }
         }
         if (combinations[i].size() == 3)
@@ -430,11 +456,22 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
         cout << minPath[i] << " ";
     }
     cout << endl;
+    outFile << "Minimum Cost: " << minCost << std::endl;
+    outFile << "Path: ";
+    for (int i = 0; i < minPath.size(); i++)
+    {
+        outFile << minPath[i] << " ";
+    }
+    outFile << std::endl;
+
+    outFile.close();
+    std::cout << "Cost Data written to cost.txt" << std::endl;
 }
 
 int main()
 {
     int n;
+
     cout << "Enter the number of nodes: ";
     cin >> n;
 
@@ -472,6 +509,7 @@ int main()
         }
     }
     vector<vector<Table>> tables = generateTableForMiddleNodes(m, n, a);
+    cout << "Tables generated" << endl;
     vector<vector<int>> combinations = generateCombinations(m, n, a);
     cout << "Nodes thorugh which the path can be established: \n";
     justPrintTable(combinations);

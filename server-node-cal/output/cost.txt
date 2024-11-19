@@ -1,0 +1,6 @@
+Cost via 2 is 4.33333
+Cost via 1 & 2 is 4.22222
+Cost via 1 & 3 is 8.92857
+Cost via 2 & 3 is 3.75
+Minimum Cost: 3.75
+Path: 2 3 

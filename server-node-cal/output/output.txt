@@ -1,0 +1,36 @@
+***    FOR NODE 1   ***
+
+0 1  -> Cost: -1
+To Nodes: 5
+
+1 0  -> Cost: 4
+To Nodes: 4
+
+1 1  -> Cost: -1
+To Nodes: 4, 5
+
+
+***    FOR NODE 2   ***
+
+0 1  -> Cost: 3
+To Nodes: 5
+
+1 0  -> Cost: 3
+To Nodes: 4
+
+1 1  -> Cost: 2.33333
+To Nodes: 4, 5
+
+
+***    FOR NODE 3   ***
+
+0 1  -> Cost: 2
+To Nodes: 5
+
+1 0  -> Cost: -1
+To Nodes: 4
+
+1 1  -> Cost: -1
+To Nodes: 4, 5
+
+
