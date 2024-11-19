@@ -441,6 +441,10 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
         }
         if (combinations[i].size() == 3)
         {
+            int node1 = combinations[i][0];
+            int node2 = combinations[i][1];
+            int node3 = combinations[i][2];
+            
             cout << "Cost via 3 Nodes:  " << cost << endl;
         }
         if (cost < minCost)
