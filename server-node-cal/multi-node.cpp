@@ -207,7 +207,7 @@ vector<vector<Table>> generateTableForMiddleNodes(int m, int n, vector<vector<in
     return t;
 }
 
-vector<vector<int>> generateCombinations(int m, int n, vector<vector<int>> &a)
+vector<vector<int>> generateCombinations(int m, int n, vector<vector<int>> &a, int flag)
 {
     vector<vector<int>> result;
     int totalCombinations = (1 << m);
@@ -226,7 +226,10 @@ vector<vector<int>> generateCombinations(int m, int n, vector<vector<int>> &a)
 
         result.push_back(combination);
     }
-
+    if (flag == 1)
+    {
+        return result;
+    }
     for (int i = 0; i < result.size(); i++)
     {
         int flag = 0;
@@ -262,7 +265,6 @@ vector<vector<int>> generateCombinations(int m, int n, vector<vector<int>> &a)
             result.erase(result.begin() + i);
         }
     }
-    cout << "generated combinations" << endl;
     return result;
 }
 
@@ -444,7 +446,7 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
             int node1 = combinations[i][0];
             int node2 = combinations[i][1];
             int node3 = combinations[i][2];
-            
+
             cout << "Cost via 3 Nodes:  " << cost << endl;
         }
         if (cost < minCost)
@@ -470,6 +472,197 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
 
     outFile.close();
     std::cout << "Cost Data written to cost.txt" << std::endl;
+}
+
+vector<vector<int>> generateDestinationCombinations(int n, int m)
+{
+    int totalDestinations = n - (m + 1);
+    vector<int> destinations;
+    for (int i = m + 1; i <= n - 1; i++)
+    {
+        destinations.push_back(i);
+    }
+
+    int totalCombinations = pow(2, totalDestinations) - 1;
+    vector<vector<int>> combinations;
+
+    for (int i = 1; i <= totalCombinations; i++)
+    {
+        vector<int> combination;
+        for (int j = 0; j < totalDestinations; j++)
+        {
+            if (i & (1 << j))
+            {
+                combination.push_back(destinations[j]);
+            }
+        }
+        combinations.push_back(combination);
+    }
+    return combinations;
+}
+
+float findCostForTwoElements(int c1, int c2, int c3, int c4)
+{
+    return ((
+                ((1 - (1.0 / c1)) * (1 - (1.0 / c2))) +
+                ((1 - (1.0 / c1)) * (1.0 / c2) * (1 + c4)) +
+                ((1.0 / c1) * (1 - (1.0 / c2)) * (1 + c3)) +
+                ((1.0 / c1) * (1.0 / c2) * (1 + min(c3, c4)))) /
+            (1 - ((1 - (1.0 / c1)) * (1 - (1.0 / c2)))));
+}
+
+float findCostForThreeElements(int c1, int c2, int c3, int c4, int c5, int c6)
+{
+    return ((
+                ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1 - (1.0 / c3))) +
+                ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1.0 / c3) * (1 + c6)) +
+                ((1 - (1.0 / c1)) * (1.0 / c2) * (1 - (1.0 / c3)) * (1 + c5)) +
+                ((1 - (1.0 / c1)) * (1.0 / c2) * (1.0 / c3) * (1 + min(c5, c6))) +
+                ((1.0 / c1) * (1 - (1.0 / c2)) * (1 - (1.0 / c3)) * (1 + c4)) +
+                ((1.0 / c1) * (1 - (1.0 / c2)) * (1.0 / c3) * (1 + min(c4, c6))) +
+                ((1.0 / c1) * (1.0 / c2) * (1 - (1.0 / c3)) * (1 + min(c4, c5))) +
+                ((1.0 / c1) * (1.0 / c2) * (1.0 / c3) * (1 + min(min(c4, c5), c6)))) /
+            (1 - ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1 - (1.0 / c3)))));
+}
+
+void generateTableForEachDestination(int n, int m, vector<vector<int>> &a, vector<vector<Table>> &tables, vector<vector<int>> &destCombinations, vector<vector<int>> combinations)
+{
+    vector<Table> t;
+    for (int i = 0; i < destCombinations.size(); i++)
+    {
+        if (destCombinations[i].size() == 1)
+        {
+
+            int dest = destCombinations[i][0];
+            float minCost = 1000.0;
+            vector<int> minNode;
+            Table entry;
+            for (int i = 0; i < combinations.size(); i++)
+            {
+                int canSend = 1;
+                vector<int> Nodes;
+                for (int j = 0; j < combinations[i].size(); j++)
+                {
+                    int node = combinations[i][j];
+
+                    int flag = 0;
+                    if (a[node][dest] == 0)
+                    {
+                        canSend = 0;
+                        break;
+                    }
+                }
+
+                if (canSend)
+                {
+                    float cost = 0;
+
+                    if (combinations[i].size() == 1)
+                    {
+                        int node = combinations[i][0];
+                        cost += a[0][node];
+                        for (int k = 0; k < tables[node - 1].size(); k++)
+                            if (tables[node - 1][k].destinations.size() == 1 && tables[node - 1][k].destinations[0] == dest && tables[node - 1][k].cost != -1)
+                            {
+                                cost += tables[node - 1][k].cost;
+                                Nodes.push_back(node);
+                            }
+                    }
+                    if (combinations[i].size() == 2)
+                    {
+                        int node1 = combinations[i][0];
+                        int node2 = combinations[i][1];
+                        cost = findCostForTwoElements(a[0][node1], a[0][node2], a[node1][dest], a[node2][dest]);
+                        Nodes.push_back(node1);
+                        Nodes.push_back(node2);
+                    }
+                    if (combinations[i].size() == 3)
+                    {
+                        int node1 = combinations[i][0];
+                        int node2 = combinations[i][1];
+                        int node3 = combinations[i][2];
+                        cost = findCostForThreeElements(a[0][node1], a[0][node2], a[0][node3], a[node1][dest], a[node2][dest], a[node3][dest]);
+                        Nodes.push_back(node1);
+                        Nodes.push_back(node2);
+                        Nodes.push_back(node3);
+                    }
+
+                    if (cost < minCost)
+                    {
+                        minCost = cost;
+                        minNode = Nodes;
+                    }
+                    entry.cost = cost;
+                    entry.NodeVal = -1;
+                    entry.destinations.push_back(dest);
+                    entry.combinations = Nodes;
+                    t.push_back(entry);
+                }
+            }
+        }
+    }
+    for (int i = 0; i < destCombinations.size(); i++)
+    {
+        if (destCombinations[i].size() == 2)
+        {
+
+            int dest1 = destCombinations[i][0];
+            int dest2 = destCombinations[i][1];
+            float minCost = 1000.0;
+            vector<int> minNode;
+            Table entry;
+            for (int i = 0; i < combinations.size(); i++)
+            {
+                int canSend = 1;
+                vector<int> Nodes;
+                int dest1CanBeSent = 0;
+                int dest2CanBeSent = 0;
+
+                for (int j = 0; j < combinations[i].size(); j++)
+                {
+                    int node = combinations[i][j];
+
+                    int flag = 0;
+                    if (a[node][dest1] != 0 && dest1CanBeSent == 0)
+                    {
+                        dest1CanBeSent = 1;
+                    }
+                    if (a[node][dest2] != 0 && dest2CanBeSent == 0)
+                    {
+                        dest2CanBeSent = 1;
+                    }
+                }
+
+                if (dest1CanBeSent && dest2CanBeSent)
+                {
+                    float cost = 0;
+
+                    if (combinations[i].size() == 3)
+                    {
+                        int node1 = combinations[i][0];
+                        int node2 = combinations[i][1];
+                        int node3 = combinations[i][2];
+                        // cost = findCostForThreeElements(a[0][node1], a[0][node2], a[0][node3], a[node1][dest], a[node2][dest], a[node3][dest]);
+                        Nodes.push_back(node1);
+                        Nodes.push_back(node2);
+                        Nodes.push_back(node3);
+                    }
+                }
+            }
+        }
+    }
+
+    cout << endl;
+    for (int i = 0; i < t.size(); i++)
+    {
+        cout << "Cost from 0 to " << t[i].destinations[0] << " is " << t[i].cost << " via ";
+        for (int j = 0; j < t[i].combinations.size(); j++)
+        {
+            cout << t[i].combinations[j] << " ";
+        }
+        cout << endl;
+    }
+    cout << endl;
 }
 
 int main()
@@ -514,10 +707,14 @@ int main()
     }
     vector<vector<Table>> tables = generateTableForMiddleNodes(m, n, a);
     cout << "Tables generated" << endl;
-    vector<vector<int>> combinations = generateCombinations(m, n, a);
+    vector<vector<int>> combinations = generateCombinations(m, n, a, 1);
+    vector<vector<int>> Possiblecombinations = generateCombinations(m, n, a, 0);
+    vector<vector<int>> destCombinations = generateDestinationCombinations(n, m);
+    generateTableForEachDestination(n, m, a, tables, destCombinations, combinations);
+
     cout << "Nodes thorugh which the path can be established: \n";
-    justPrintTable(combinations);
-    findMinimumCost(m, n, a, combinations, tables);
+    justPrintTable(Possiblecombinations);
+    findMinimumCost(m, n, a, Possiblecombinations, tables);
 
     // printTable(n, a);
 
