@@ -9,6 +9,14 @@ using namespace std;
 
 #define ROUND_TO_ONE_DECIMAL(value) (std::round((value) * 10) / 10.0)
 
+struct Table
+{
+    vector<int> combinations;
+    float cost;
+    int NodeVal;
+    vector<int> destinations;
+};
+
 void justPrintTable(const vector<vector<int>> &a)
 {
     for (int i = 0; i < a.size(); i++)
@@ -56,10 +64,39 @@ void printTable(int n, const vector<vector<int>> &a)
     std::cout << "Data written to table_output.txt" << std::endl;
 }
 
+float truncateToOneDecimal(float value)
+{
+    return std::floor(value * 10) / 10.0;
+}
+
 float costOfTwoNodes(float cost1, float cost2)
 {
     return 1 + (cost2 * ((1.0 / cost1) * (1 - (1.0 / cost2)))) +
            (cost1 * ((1.0 / cost2) * (1 - (1.0 / cost1))));
+}
+
+float findCostForTwoElements(float c1, float c2, float c3, float c4)
+{
+    return ((
+                ((1 - (1.0 / c1)) * (1 - (1.0 / c2))) +
+                ((1 - (1.0 / c1)) * (1.0 / c2) * (1 + c4)) +
+                ((1.0 / c1) * (1 - (1.0 / c2)) * (1 + c3)) +
+                ((1.0 / c1) * (1.0 / c2) * (1 + std::min(c3, c4)))) /
+            (1 - ((1 - (1.0 / c1)) * (1 - (1.0 / c2)))));
+}
+
+float findCostForThreeElements(int c1, int c2, int c3, int c4, int c5, int c6)
+{
+    return ((
+                ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1 - (1.0 / c3))) +
+                ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1.0 / c3) * (1 + c6)) +
+                ((1 - (1.0 / c1)) * (1.0 / c2) * (1 - (1.0 / c3)) * (1 + c5)) +
+                ((1 - (1.0 / c1)) * (1.0 / c2) * (1.0 / c3) * (1 + std::min(c5, c6))) +
+                ((1.0 / c1) * (1 - (1.0 / c2)) * (1 - (1.0 / c3)) * (1 + c4)) +
+                ((1.0 / c1) * (1 - (1.0 / c2)) * (1.0 / c3) * (1 + std::min(c4, c6))) +
+                ((1.0 / c1) * (1.0 / c2) * (1 - (1.0 / c3)) * (1 + std::min(c4, c5))) +
+                ((1.0 / c1) * (1.0 / c2) * (1.0 / c3) * (1 + std::min(std::min(c4, c5), c6)))) /
+            (1 - ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1 - (1.0 / c3)))));
 }
 
 vector<vector<int>> generateBinaryCombinations(int destNodes)
@@ -79,14 +116,6 @@ vector<vector<int>> generateBinaryCombinations(int destNodes)
 
     return combinations;
 }
-
-struct Table
-{
-    vector<int> combinations;
-    float cost;
-    int NodeVal;
-    vector<int> destinations;
-};
 
 vector<vector<Table>> generateTableForMiddleNodes(int m, int n, vector<vector<int>> &a)
 {
@@ -268,12 +297,7 @@ vector<vector<int>> generateCombinations(int m, int n, vector<vector<int>> &a, i
     return result;
 }
 
-float truncateToOneDecimal(float value)
-{
-    return std::floor(value * 10) / 10.0;
-}
-
-void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &combinations, vector<vector<Table>> tables)
+float findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &combinations, vector<vector<Table>> tables)
 {
     float minCost = 1000.00;
     vector<int> minPath;
@@ -441,14 +465,7 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
                 outFile << "Cost via " << node1 << " & " << node2 << " is " << c1 << std::endl;
             }
         }
-        if (combinations[i].size() == 3)
-        {
-            int node1 = combinations[i][0];
-            int node2 = combinations[i][1];
-            int node3 = combinations[i][2];
 
-            cout << "Cost via 3 Nodes:  " << cost << endl;
-        }
         if (cost < minCost)
         {
             minCost = cost;
@@ -472,6 +489,7 @@ void findMinimumCost(int m, int n, vector<vector<int>> &a, vector<vector<int>> &
 
     outFile.close();
     std::cout << "Cost Data written to cost.txt" << std::endl;
+    return minCost;
 }
 
 vector<vector<int>> generateDestinationCombinations(int n, int m)
@@ -501,31 +519,7 @@ vector<vector<int>> generateDestinationCombinations(int n, int m)
     return combinations;
 }
 
-float findCostForTwoElements(int c1, int c2, int c3, int c4)
-{
-    return ((
-                ((1 - (1.0 / c1)) * (1 - (1.0 / c2))) +
-                ((1 - (1.0 / c1)) * (1.0 / c2) * (1 + c4)) +
-                ((1.0 / c1) * (1 - (1.0 / c2)) * (1 + c3)) +
-                ((1.0 / c1) * (1.0 / c2) * (1 + min(c3, c4)))) /
-            (1 - ((1 - (1.0 / c1)) * (1 - (1.0 / c2)))));
-}
-
-float findCostForThreeElements(int c1, int c2, int c3, int c4, int c5, int c6)
-{
-    return ((
-                ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1 - (1.0 / c3))) +
-                ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1.0 / c3) * (1 + c6)) +
-                ((1 - (1.0 / c1)) * (1.0 / c2) * (1 - (1.0 / c3)) * (1 + c5)) +
-                ((1 - (1.0 / c1)) * (1.0 / c2) * (1.0 / c3) * (1 + min(c5, c6))) +
-                ((1.0 / c1) * (1 - (1.0 / c2)) * (1 - (1.0 / c3)) * (1 + c4)) +
-                ((1.0 / c1) * (1 - (1.0 / c2)) * (1.0 / c3) * (1 + min(c4, c6))) +
-                ((1.0 / c1) * (1.0 / c2) * (1 - (1.0 / c3)) * (1 + min(c4, c5))) +
-                ((1.0 / c1) * (1.0 / c2) * (1.0 / c3) * (1 + min(min(c4, c5), c6)))) /
-            (1 - ((1 - (1.0 / c1)) * (1 - (1.0 / c2)) * (1 - (1.0 / c3)))));
-}
-
-void generateTableForEachDestination(int n, int m, vector<vector<int>> &a, vector<vector<Table>> &tables, vector<vector<int>> &destCombinations, vector<vector<int>> combinations)
+void generateTableForEachDestination(int n, int m, vector<vector<int>> &a, vector<vector<Table>> &tables, vector<vector<int>> &destCombinations, vector<vector<int>> combinations, float minCosttoReachDestination)
 {
     vector<Table> t;
     for (int i = 0; i < destCombinations.size(); i++)
@@ -594,15 +588,14 @@ void generateTableForEachDestination(int n, int m, vector<vector<int>> &a, vecto
                     }
                     entry.cost = cost;
                     entry.NodeVal = -1;
-                    entry.destinations.push_back(dest);
+                    vector<int> Destinations;
+                    Destinations.push_back(dest);
+                    entry.destinations = Destinations;
                     entry.combinations = Nodes;
                     t.push_back(entry);
                 }
             }
         }
-    }
-    for (int i = 0; i < destCombinations.size(); i++)
-    {
         if (destCombinations[i].size() == 2)
         {
 
@@ -639,13 +632,33 @@ void generateTableForEachDestination(int n, int m, vector<vector<int>> &a, vecto
 
                     if (combinations[i].size() == 3)
                     {
+                        float costOfDest1ViaNode12 = findCostForTwoElements(a[0][combinations[i][0]], a[0][combinations[i][1]], a[combinations[i][0]][dest1], a[combinations[i][1]][dest1]);
+
+                        float costofBothDestViaNode2 = costOfTwoNodes(static_cast<float>(a[combinations[i][1]][dest1]), static_cast<float>(a[combinations[i][1]][dest2]));
+
+                        float costofDest2ViaNode23 = findCostForTwoElements(a[0][combinations[i][1]], a[0][combinations[i][2]], a[combinations[i][1]][dest2], a[combinations[i][2]][dest2]);
+                        float minimumCostToReachDestinationFromAllNodes = minCosttoReachDestination;
+
                         int node1 = combinations[i][0];
                         int node2 = combinations[i][1];
                         int node3 = combinations[i][2];
-                        // cost = findCostForThreeElements(a[0][node1], a[0][node2], a[0][node3], a[node1][dest], a[node2][dest], a[node3][dest]);
+                        float val = 0;
+                        val = ((((1 - (1.0 / a[0][node1])) * (1 - (1.0 / a[0][node2])) * (1 - (1.0 / a[0][node3])))) + ((1 - (1.0 / a[0][node1])) * (1 - (1.0 / a[0][node2])) * (1.0 / a[0][node3]) * (1 + a[node3][dest2] + costOfDest1ViaNode12)) +
+                               ((1 - (1.0 / a[0][node1])) * (1.0 / a[0][node2]) * (1 - (1.0 / a[0][node3])) * (1 + a[node2][dest1] + costofBothDestViaNode2)) +
+                               ((1 - (1.0 / a[0][node1])) * (1.0 / a[0][node2]) * (1.0 / a[0][node3]) * (1 + std::min(static_cast<float>(a[node2][dest1] + a[node3][dest2]), static_cast<float>(costofBothDestViaNode2)))) +
+                               ((1.0 / a[0][node1]) * (1 - (1.0 / a[0][node2])) * (1 - (1.0 / a[0][node3])) * (1 + a[node1][dest1] + costofDest2ViaNode23)) + ((1.0 / a[0][node1]) * (1 - (1.0 / a[0][node2])) * (1.0 / a[0][node3]) * (1 + a[node1][dest1] + a[node3][dest2])) + ((1.0 / a[0][node1]) * (1.0 / a[0][node2]) * (1 - (1.0 / a[0][node3])) * (1 + std::min(static_cast<float>(a[node1][dest1] + a[node2][dest2]), static_cast<float>(costofBothDestViaNode2)))) + ((1.0 / a[0][node1]) * (1.0 / a[0][node2]) * (1.0 / a[0][node3]) * (1 + minimumCostToReachDestinationFromAllNodes))) /
+                              (1 - ((1 - (1.0 / a[0][node1])) * (1 - (1.0 / a[0][node2])) * (1 - (1.0 / a[0][node3]))));
                         Nodes.push_back(node1);
                         Nodes.push_back(node2);
                         Nodes.push_back(node3);
+                        entry.combinations = Nodes;
+                        entry.cost = val;
+                        entry.NodeVal = -1;
+                        vector<int> Destinations;
+                        Destinations.push_back(dest1);
+                        Destinations.push_back(dest2);
+                        entry.destinations = Destinations;
+                        t.push_back(entry);
                     }
                 }
             }
@@ -655,13 +668,19 @@ void generateTableForEachDestination(int n, int m, vector<vector<int>> &a, vecto
     cout << endl;
     for (int i = 0; i < t.size(); i++)
     {
-        cout << "Cost from 0 to " << t[i].destinations[0] << " is " << t[i].cost << " via ";
+        cout << "Cost from 0 to ";
+        for (int j = 0; j < t[i].destinations.size(); j++)
+        {
+            cout << t[i].destinations[j] << " ";
+        }
+        cout << "is " << t[i].cost << " via ";
         for (int j = 0; j < t[i].combinations.size(); j++)
         {
             cout << t[i].combinations[j] << " ";
         }
         cout << endl;
     }
+
     cout << endl;
 }
 
@@ -710,11 +729,11 @@ int main()
     vector<vector<int>> combinations = generateCombinations(m, n, a, 1);
     vector<vector<int>> Possiblecombinations = generateCombinations(m, n, a, 0);
     vector<vector<int>> destCombinations = generateDestinationCombinations(n, m);
-    generateTableForEachDestination(n, m, a, tables, destCombinations, combinations);
 
     cout << "Nodes thorugh which the path can be established: \n";
     justPrintTable(Possiblecombinations);
-    findMinimumCost(m, n, a, Possiblecombinations, tables);
+    float minCost = findMinimumCost(m, n, a, Possiblecombinations, tables);
+    generateTableForEachDestination(n, m, a, tables, destCombinations, combinations, minCost);
 
     // printTable(n, a);
 
